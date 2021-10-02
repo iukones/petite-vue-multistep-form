@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Petite Vue Example</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.1/dist/tailwind.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <!-- <link
+      href="https://data.jsdelivr.com/v1/package/npm/@tailwindcss/custom-forms/badge"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="https://www.jsdelivr.com/package/npm/@tailwindcss/custom-forms"
+      rel="stylesheet"
+      type="text/css"
+    /> -->
+  </head>
+  <body>
+    <main>
+      <article>
+        <section>
+          <div
+            id="multi-step-form"
+            class="hidden"
+            @mounted="$el.classList.remove('hidden')"
+            v-scope
+          >
+            <!--Step Indicators-->
+            <div
+              class="relative px-10 pt-10 max-w-xl mx-auto"
+              v-scope="StepsIndicatorComponent({ stepsCount: totalSteps })"
+            ></div>
+            <form
+              id="formId"
+              class="w-full max-w-lg pt-5 px-5 mx-auto"
+              @submit.prevent=""
+            >
+              <div v-if="!submitted">
+                <div v-for="(fieldKeys, step) in steps">
+                  <div v-if="currentStep === step">
+                    <div
+                      v-for="(field, index) in fieldKeys"
+                      v-scope="FieldComponent({
+                        field: fields[field],
+                        isInvalid:()=> !!invalids[field],
+                        invalidMessage: () => invalids[field],
+                        validate: ()=> validateField(field)
+                      })"
+                    ></div>
+                  </div>
+                </div>
+                <!--Form Footer (Buttons)-->
+                <footer class="flex flex-row-reverse gap-2 justify-start mt-5">
+                  <button
+                    class="
+                      bg-indigo-500
+                      hover:bg-indigo-400
+                      text-white
+                      font-bold
+                      py-2
+                      px-4
+                      border-b-4 border-indigo-700
+                      hover:border-indigo-500
+                      rounded
+                    "
+                    @click="nextStep"
+                    v-if="!isLastStep"
+                  >
+                    Siguiente
+                  </button>
+                  <button
+                    class="
+                      bg-indigo-500
+                      hover:bg-indigo-400
+                      text-white
+                      font-bold
+                      py-2
+                      px-4
+                      border-b-4 border-indigo-700
+                      hover:border-indigo-500
+                      rounded
+                    "
+                    @click="submit"
+                    v-if="isLastStep"
+                  >
+                    Enviar y finalizar
+                  </button>
+                  <button
+                    class="
+                      bg-indigo-400
+                      hover:bg-indigo-400
+                      text-white
+                      font-bold
+                      py-2
+                      px-4
+                      border-b-4 border-indigo-700
+                      hover:border-indigo-500
+                      rounded
+                    "
+                    @click.prevent="previousStep"
+                    v-if="!isFirstStep"
+                  >
+                    Anterior
+                  </button>
+                </footer>
+              </div>
+              <!--Success Page-->
+              <div v-else>
+                <h3 class="p-5 text-lg text-center">
+                  Hey <strong>{{fields.name.value}}</strong>, gracias por tu
+                  donación!
+                </h3>
+                <footer class="flex flex-row-reverse gap-2 justify-center mt-5">
+                  <button
+                    class="
+                      bg-indigo-400
+                      hover:bg-indigo-400
+                      text-white
+                      font-bold
+                      py-2
+                      px-4
+                      border-b-4 border-indigo-700
+                      hover:border-indigo-500
+                      rounded
+                    "
+                    @click="reloadPage"
+                  >
+                    Hacer otra donación
+                  </button>
+                </footer>
+              </div>
+            </form>
+          </div>
+        </section>
+      </article>
+    </main>
+
+    <script type="module" src="app.js"></script>
+
+    <!-- templates -->
+    <!--Steps Indicator Component Template-->
+    <template id="step-indicator-component-template">
+      <div class="flex mb-2 items-center justify-end">
+        <div>
+          <span
+            class="
+              text-xs
+              font-semibold
+              inline-block
+              py-1
+              px-2
+              uppercase
+              rounded-full
+              text-indigo-600
+              bg-indigo-200
+            "
+          >
+            Formulario de donación
+          </span>
+        </div>
+        <!-- <div class="text-right">
+          <span class="text-xs font-semibold inline-block text-indigo-600">
+            50%
+          </span>
+        </div> -->
+      </div>
+      <div class="overflow-hidden h-2 mb-2 text-xs flex rounded bg-pink-200">
+        <div
+          v-for="step in stepsCountWithSuccessPage"
+          :class="{'bg-indigo-500 ': step - 1 <= currentStep || submitted}"
+          style="width: 33.3333%"
+          class="
+            shadow-none
+            flex flex-col
+            text-center
+            whitespace-nowrap
+            text-white
+            justify-center
+            bg-indigo-200
+          "
+        ></div>
+      </div>
+    </template>
+
+    <!-- Field component template -->
+    <template id="field-component-template">
+      <!-- form field -->
+      <div class="relative">
+        <div class="form-control mb-5">
+          <label class="block text-purple-600">
+            <span>{{ field.label }}</span>
+            <input
+              class="
+                bg-gray-200
+                appearance-none
+                border-2 border-gray-200
+                rounded
+                w-full
+                py-3
+                px-4
+                text-gray-700
+                leading-tight
+                focus:outline-none focus:bg-white focus:border-purple-500
+              "
+              type="text"
+              v-model="field.value"
+              :class="{'appearance-none block w-full bg-gray-200 text-gray-700 border border-red-500 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white' : isInvalid}"
+              @input="validate"
+            />
+          </label>
+          <div
+            v-if="isInvalid"
+            class="text-red-500 text-md italic text-right pr-2 right-0"
+          >
+            <small>{{invalidMessage}}</small>
+          </div>
+        </div>
+      </div>
+    </template>
+  </body>
+</html>
